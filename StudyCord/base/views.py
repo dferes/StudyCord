@@ -67,7 +67,8 @@ def home(request):
 
     topics = Topic.objects.all()
     room_count = rooms.count()  # apparently, getting the length of a query set is faster than python's len()
-    room_messages = Message.objects.all()
+    # room_messages = Message.objects.all()
+    room_messages = Message.objects.filter(Q(room__topic__name__icontains=q))
     
     context = {
         'rooms': rooms, 
@@ -111,6 +112,9 @@ def create_room(request):
     if request.method == 'POST':
         form = RoomForm(request.POST)
         if form.is_valid():
+            room = form.save(commit=False)
+            room.host = request.user # since the host isn't entered through the form, but field is still required
+            room.save
             form.save()    # if the number of fields and variable types match as expected
             return redirect('home') # access by name instead of endpoint
     context = { 'form': form}
@@ -159,4 +163,18 @@ def delete_message(request, pk):
         message.delete() # removes the instance from the db
         return redirect('home')
     return render(request, 'base/delete.html', {'obj': message}) # this would be for a get request
+
+
+def user_profile(request, pk):
+    user = User.objects.get(id=pk)
+    rooms = user.room_set.all()  # all rooms that the user CREATED ??
+    room_messages = user.message_set.all()
+    topics = Topic.objects.all()
+    context = {
+        'user': user, 
+        'rooms': rooms, 
+        'room_messages': room_messages,
+        'topics': topics
+    }
+    return render(request, 'base/profile.html', context)
  
