@@ -109,15 +109,19 @@ def room(request, pk):
 @login_required(login_url='/login')  # If the session id is not in the browser then user will be redirected
 def create_room(request):
     form = RoomForm()
+    topics = Topic.objects.all()
     if request.method == 'POST':
-        form = RoomForm(request.POST)
-        if form.is_valid():
-            room = form.save(commit=False)
-            room.host = request.user # since the host isn't entered through the form, but field is still required
-            room.save
-            form.save()    # if the number of fields and variable types match as expected
-            return redirect('home') # access by name instead of endpoint
-    context = { 'form': form}
+        topic_name = request.POST.get('topic')
+        topic, created = Topic.objects.get_or_create(name=topic_name)
+        print(f"topic: {topic} created: {created}")
+        Room.objects.create(
+            host=request.user,
+            topic=topic,
+            name=request.POST.get('name'),
+            description=request.POST.get('description')
+        )
+        return redirect('home') # access by name instead of endpoint
+    context = { 'form': form, 'topics': topics}
     return render(request, 'base/room_form.html', context) 
 
 
@@ -125,17 +129,20 @@ def create_room(request):
 def update_room(request, pk):
     room = Room.objects.get(id=pk)
     form = RoomForm(instance=room) # This will pre-fill the form fields with the instance of room that matches id=pk
-    
+    topics = Topic.objects.all()
     if request.user != room.host:
         return HttpResponse('You are not allowed here!')
 
     if request.method == 'POST':
-        form = RoomForm(request.POST, instance=room)
-        if form.is_valid(): 
-            form.save()
-            return redirect('home')
+        topic_name = request.POST.get('topic')
+        topic, created = Topic.objects.get_or_create(name=topic_name)
+        room.name = request.POST.get('name')
+        room.topic = topic
+        room.description = request.POST.get('description')
+        room.save()
+        return redirect('home')
 
-    context = {'form': form}
+    context = {'form': form, 'topics': topics, 'room': room}
     return render(request, 'base/room_form.html', context)
 
 
