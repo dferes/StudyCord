@@ -8,6 +8,7 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('room/<str:pk>/', views.room, name='room'),
     path('profile/<str:pk>/', views.user_profile, name='user-profile'),
+    path('/update-user/', views.update_user, name='update-user'), # Don't need a id/username since the current user is the one who is logged in
 
     path('create-room/', views.create_room, name='create-room'),
     path('update-room/<str:pk>/', views.update_room, name='update-room'),
